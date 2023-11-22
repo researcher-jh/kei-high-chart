@@ -190,6 +190,7 @@
 
           result[sidoName] = {};
           headers.forEach((header, index) => {
+            const newHeader = header.replace(/\r/g, "");
             result[sidoName][header] = dataPoints[index];
           });
         });
