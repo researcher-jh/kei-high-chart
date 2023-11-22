@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Air Pollution Emissions Area Race Chart</title>
+    <style type="text/css">
+      @import url("https://netdna.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css");
+
+      figure {
+        margin: 0;
+      }
+
+      #play-controls {
+        max-width: 600px;
+        margin: 1em auto;
+      }
+
+      #container {
+        height: 1200px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      #csv {
+        display: none;
+      }
+
+      #play-pause-button {
+        margin-left: 10px;
+        width: 50px;
+        height: 50px;
+        cursor: pointer;
+        border: 1px solid rgba(2, 117, 255, 1);
+        border-radius: 25px;
+        color: white;
+        background-color: rgba(2, 117, 255, 1);
+        transition: background-color 250ms;
+      }
+
+      #play-pause-button:hover {
+        background-color: rgba(2, 117, 255, 0.5);
+      }
+
+      #play-range {
+        transform: translateY(2.5px);
+        width: calc(100% - 90px);
+        background: #f8f8f8;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/annotations.js"></script>
+    <script src="https://code.highcharts.com/modules/data.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+    <figure class="highcharts-figure">
+      <div id="parent-container">
+        <div id="play-controls">
+          <button
+            id="play-pause-button"
+            class="fa fa-play"
+            title="play"
+          ></button>
+          <input
+            id="play-range"
+            type="range"
+            value="1999"
+            min="1999"
+            max="2020"
+          />
+        </div>
+        <div id="container"></div>
+      </div>
+    </figure>
+    <pre id="csv" style="display: none">
+    year,서울특별시,부산광역시,대구광역시,인천광역시,광주광역시,대전광역시,울산광역시,세종특별자치시,경기도,강원도,충청북도,충청남도,전라북도,전라남도,경상북도,경상남도,제주특별자치도
+    1999,3188632,3046823,3757061,1775946,576855,778204,9379802,0,7765332,6853139,4839388,3880687,1983331,4593852,7112581,3235519,484024
+    2000,3749690,3051419,2003721,2118748,635602,837304,10213322,0,7585025,5441393,4495260,4087089,1929440,4356945,7150502,3582771,480880
+    2001,4532622,3551770,2313224,2514820,692086,929561,10486765,0,8614364,5055893,5013021,4490176,2370319,4848326,7187845,4220996,546032
+    2002,4636994,3758568,2075576,2568683,825296,962014,8834474,0,8877063,4503259,4531216,4319702,2301232,6084817,6057760,4243030,519933
+    2003,4683121,3027076,2147070,2969558,841618,1151085,8918612,0,9416828,5033575,4259743,4605147,2509884,5167536,6315220,4793761,517210
+    2004,4423739,2994195,2153688,2635271,828296,1052498,8736509,0,9346203,3748765,3333348,4568088,2512992,5655694,5582122,4433430,486197
+    2005,4310503,3205962,2342754,2727864,699157,906226,9915971,0,8945303,5051265,3968003,5469395,2462684,5665635,5737057,5479320,455523
+    2006,3432990,3485691,2246695,2565709,706219,832889,8924729,0,8660486,4495505,3953762,5663276,2559550,5568193,5906635,5415249,377314
+    2007,3919562,2959168,1993122,2465706,651637,819741,9797367,0,8474622,9484557,5097363,3814335,1923400,25351528,16923491,4005560,461821
+    2008,2116491,2043283,1398799,1793426,464717,464717,7701320,0,6826541,19892302,6106038,3654260,1580220,32846676,19780333,3547299,369852
+    2009,1950741,3280165,1330583,2053415,397836,577318,6490372,0,6741077,32941301,4953109,3729015,1717567,21066694,12567046,3515085,424142
+    2010,1937900,3091857,1268610,2303421,442956,551933,7107691,0,6383771,36611592,5102566,4445969,3925211,24085449,15848145,3244278,456172
+    2011,1742412,3147418,1240074,2252258,435988,594323,3085233,0,5834489,46124596,5026219,5312371,3510472,29662943,18309396,4299430,598643
+    2012,1727467,3130999,1360634,2040649,494176,497477,3508598,343497,6044292,3870709,3603222,30818484,1720531,18358930,32859491,9131563,469759
+    2013,1735385,2994853,1310367,2037217,463011,494369,3602200,343000,6433026,3490744,3164288,30976065,1623650,20508212,33090771,8784603,511456
+    2014,1423732,2222972,2532341,1727295,353642,384483,3668532,145263,6762940,5690513,4668506,13975687,1357233,23844273,22761254,3051603,449284
+    2015,9162575,6606778,3938881,8291521,1871922,1912129,5910018,1378788,33148220,11869292,11015612,28649591,9876711,33854363,44264566,14786168,3584078
+    2016,8570515,6903205,4018715,6306482,1955128,1616379,4738522,1434054,32899631,9629491,9591219,38378848,10327918,29095759,46290439,14024178,4025641
+    2017,10552663,6957558,3695588,9676489,2054415,1702262,4021668,1113356,31409303,9685976,9587508,33243487,10264533,24592550,40585956,12502770,3469169
+    2018,15129997,6885594,3911124,7601495,1710002,1908298,4079779,1024217,31342317,9771796,9461854,37203474,10629234,28206197,45299533,11984146,3495486
+    2019,9682231,6232655,3976378,7203494,2026225,1645717,3801701,916643,29917985,9435589,8979133,31822663,10869434,24977703,38448756,11298246,3104089
+    2020,9121111,6635661,3062618,6772237,1763931,1452646,3212799,886891,28075782,7946339,8235661,12765996,8692161,13921936,17685102,10404086,2739143
+    </pre>
+
+    <script type="text/javascript">
+      const btn = document.getElementById("play-pause-button"),
+        input = document.getElementById("play-range"),
+        startYear = 1999,
+        endYear = 2020;
+
+      // General helper functions
+      const arrToAssociative = (arr) => {
+        const tmp = {};
+        arr.forEach((item) => {
+          tmp[item[0]] = item[1];
+        });
+
+        return tmp;
+      };
+
+      function getSubtitle() {
+        return `<span style='font-size: 60px'>${input.value}</span>`;
+      }
+
+      const data = [];
+
+      const chart = Highcharts.chart("container", {
+        chart: {
+          events: {
+            // Some annotation labels need to be rotated to make room
+            load: function () {
+              // const labels = this.annotations[0].labels;
+              // labels
+              //   .find((a) => a.options.id === "vinyl-label")
+              //   .graphic.attr({
+              //     rotation: -20,
+              //   });
+              // labels
+              //   .find((a) => a.options.id === "cassettes-label")
+              //   .graphic.attr({
+              //     rotation: 20,
+              //   });
+            },
+          },
+          type: "area",
+          marginTop: 100,
+          animation: {
+            duration: 700,
+            easing: (t) => t,
+          },
+        },
+        title: {
+          text: "Air Pollution Emissions race chart",
+        },
+        subtitle: {
+          text: getSubtitle(),
+          floating: true,
+          align: "right",
+          verticalAlign: "middle",
+          x: -100,
+          y: -110,
+        },
+        data: {
+          csv: document.getElementById("csv").innerHTML,
+          itemDelimiter: ",",
+          complete: function (options) {
+            for (let i = 0; i < options.series.length; i++) {
+              data[i] = arrToAssociative(options.series[i].data);
+              options.series[i].data = null;
+            }
+          },
+        },
+        xAxis: {
+          allowDecimals: false,
+          min: startYear,
+          max: endYear,
+        },
+        yAxis: {
+          reversedStacks: false,
+          title: {
+            text: "Air Pollution Emissions in South Korea",
+          },
+          labels: {
+            format: "${text}",
+          },
+        },
+        tooltip: {
+          split: true,
+          headerFormat: '<span style="font-size: 1.2em">{point.x}</span>',
+          pointFormat:
+            "{series.name}: <b>${point.y:,.1f} B</b> ({point.percentage:.1f}%)",
+          crosshairs: true,
+        },
+        plotOptions: {
+          area: {
+            stacking: "normal",
+            pointStart: startYear,
+            marker: {
+              enabled: false,
+            },
+          },
+        },
+        responsive: {
+          rules: [
+            {
+              condition: {
+                maxWidth: 500,
+              },
+              chartOptions: {
+                title: {
+                  align: "left",
+                },
+                subtitle: {
+                  y: -150,
+                  x: -20,
+                },
+                yAxis: {
+                  labels: {
+                    align: "left",
+                    x: 0,
+                    y: -3,
+                  },
+                  tickLength: 0,
+                  title: {
+                    align: "high",
+                    reserveSpace: false,
+                    rotation: 0,
+                    textAlign: "left",
+                    y: -20,
+                  },
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      function pause(button) {
+        button.title = "play";
+        button.className = "fa fa-play";
+        clearTimeout(chart.sequenceTimer);
+        chart.sequenceTimer = undefined;
+      }
+
+      function update() {
+        chart.update(
+          {
+            subtitle: {
+              text: getSubtitle(),
+            },
+          },
+          false,
+          false,
+          false
+        );
+
+        const series = chart.series,
+          //labels = chart.annotations[0].labels,
+          yearIndex = input.value - startYear,
+          dataLength = series[0].options.data.length;
+
+        // If slider moved back in time
+        if (yearIndex < dataLength - 1) {
+          for (let i = 0; i < series.length; i++) {
+            const seriesData = series[i].data.slice(0, yearIndex);
+            series[i].setData(seriesData, false);
+          }
+        }
+
+        // If slider moved forward in time
+        if (yearIndex > dataLength - 1) {
+          const remainingYears = yearIndex - dataLength;
+          for (let i = 0; i < series.length; i++) {
+            for (let j = input.value - remainingYears; j < input.value; j++) {
+              series[i].addPoint([data[i][j]], false);
+            }
+          }
+        }
+
+        // Add current year
+        for (let i = 0; i < series.length; i++) {
+          const newY = data[i][input.value];
+          series[i].addPoint([newY], false);
+        }
+
+        // labels.forEach((label) => {
+        //   label.graphic.css({
+        //     opacity: (input.value >= label.options.point.x) | 0,
+        //   });
+        // });
+
+        chart.redraw();
+
+        input.value = parseInt(input.value, 10) + 1;
+
+        if (input.value > endYear) {
+          // Auto-pause
+          pause(btn);
+        }
+      }
+
+      function play(button) {
+        // Reset slider at the end
+        if (input.value > endYear) {
+          input.value = startYear;
+        }
+        button.title = "pause";
+        button.className = "fa fa-pause";
+        chart.sequenceTimer = setInterval(function () {
+          update();
+        }, 700);
+      }
+
+      btn.addEventListener("click", function () {
+        if (chart.sequenceTimer) {
+          pause(this);
+        } else {
+          play(this);
+        }
+      });
+
+      play(btn);
+
+      // Trigger the update on the range bar click.
+      input.addEventListener("input", update);
+    </script>
+  </body>
+</html>
