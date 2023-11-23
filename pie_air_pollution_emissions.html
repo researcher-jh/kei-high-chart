@@ -125,7 +125,6 @@
           .then((response) => response.text())
           .then((response) => csvToJson(response));
 
-        console.log(dataset);
         chart = Highcharts.chart("container", {
           title: {
             text: "Air Pollution Emissions",
