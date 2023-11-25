@@ -101,9 +101,9 @@
           <input
             id="play-range"
             type="range"
-            value="1999"
-            min="1999"
-            max="2020"
+            value="2020"
+            min="2020"
+            max="2022"
           />
         </div>
         <div id="container"></div>
@@ -114,130 +114,24 @@
     </figure>
 
     <script type="text/javascript">
-      const startYear = 1999,
-        endYear = 2020,
+      const startYear = 2020,
+        endYear = 2022,
         btn = document.getElementById("play-pause-button"),
         input = document.getElementById("play-range");
 
       let dataset, chart;
-
-      // data and map.
-      const koreaSidoMapInfo = [
-        {
-          "hc-key": "kr-kg",
-          koreanName: "경기도",
-          "hc-middle-lon": 127.231,
-          "hc-middle-lat": 37.254,
-        },
-        {
-          "hc-key": "kr-cb",
-          koreanName: "전라북도",
-          "hc-middle-lon": 127.104,
-          "hc-middle-lat": 35.693,
-        },
-        {
-          "hc-key": "kr-kn",
-          koreanName: "경상남도",
-          "hc-middle-lon": 128.192,
-          "hc-middle-lat": 35.301,
-        },
-        {
-          "hc-key": "kr-2685",
-          koreanName: "전라남도",
-          "hc-middle-lon": 127.038,
-          "hc-middle-lat": 34.979,
-        },
-        {
-          "hc-key": "kr-pu",
-          koreanName: "부산광역시",
-          "hc-middle-lon": 129.172,
-          "hc-middle-lat": 35.173,
-        },
-        {
-          "hc-key": "kr-2688",
-          koreanName: "경상북도",
-          "hc-middle-lon": 128.784,
-          "hc-middle-lat": 36.2,
-        },
-        {
-          "hc-key": "kr-sj",
-          koreanName: "세종특별자치시",
-          "hc-middle-lon": 127.21,
-          "hc-middle-lat": 36.51,
-        },
-        {
-          "hc-key": "kr-tj",
-          koreanName: "대전광역시",
-          "hc-middle-lon": 127.372,
-          "hc-middle-lat": 36.372,
-        },
-        {
-          "hc-key": "kr-ul",
-          koreanName: "울산광역시",
-          "hc-middle-lon": 129.218,
-          "hc-middle-lat": 35.521,
-        },
-        {
-          "hc-key": "kr-in",
-          koreanName: "인천광역시",
-          "hc-middle-lon": 126.629,
-          "hc-middle-lat": 37.458,
-        },
-        {
-          "hc-key": "kr-kw",
-          koreanName: "강원도",
-          "hc-middle-lon": 128.355,
-          "hc-middle-lat": 37.678,
-        },
-        {
-          "hc-key": "kr-gn",
-          koreanName: "충청남도",
-          "hc-middle-lon": 126.829,
-          "hc-middle-lat": 36.538,
-        },
-        {
-          "hc-key": "kr-cj",
-          koreanName: "제주특별자치도",
-          "hc-middle-lon": 126.557,
-          "hc-middle-lat": 33.383,
-        },
-        {
-          "hc-key": "kr-gb",
-          koreanName: "충청북도",
-          "hc-middle-lon": 127.783,
-          "hc-middle-lat": 36.832,
-        },
-        {
-          "hc-key": "kr-so",
-          koreanName: "서울특별시",
-          "hc-middle-lon": 127.005,
-          "hc-middle-lat": 37.532,
-        },
-        {
-          "hc-key": "kr-tg",
-          koreanName: "대구광역시",
-          "hc-middle-lon": 128.615,
-          "hc-middle-lat": 35.891,
-        },
-        {
-          "hc-key": "kr-kj",
-          koreanName: "광주광역시",
-          "hc-middle-lon": 126.913,
-          "hc-middle-lat": 35.209,
-        },
-      ];
 
       /*
        * transform csv to json
        */
       function csvToArray(csv) {
         const lines = csv.split("\n");
-        const headers = lines[0].split(",");
+        const headers = parseCSVLine(lines[0]);
         const result = [];
 
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].replace(/\r/g, "");
-          const currentLine = line.split(",");
+          const currentLine = parseCSVLine(line);
           if (currentLine.length === headers.length) {
             const obj = {};
             for (let j = 0; j < headers.length; j++) {
@@ -250,14 +144,31 @@
         return result;
       }
 
+      function parseCSVLine(line) {
+        const elements = [];
+        let inQuotes = false;
+        let currentValue = "";
+
+        for (let char of line) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === "," && !inQuotes) {
+            elements.push(currentValue);
+            currentValue = "";
+          } else {
+            currentValue += char;
+          }
+        }
+        if (currentValue.length > 0) {
+          elements.push(currentValue);
+        }
+
+        return elements;
+      }
+
       function getData(year) {
         const output = dataset[year].map((value, index) => {
-          return [
-            koreaSidoMapInfo.filter(
-              (info) => info.koreanName === dataset["name"][index]
-            )[0]["hc-key"],
-            Number(value) / 100000,
-          ];
+          return [dataset["SIG_CD"][index], Number(value)];
         });
         return output;
       }
@@ -282,11 +193,11 @@
 
       (async () => {
         const topology = await fetch(
-          "https://code.highcharts.com/mapdata/countries/kr/kr-all.topo.json"
+          "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/map_data/sigungu_simplified.geojson"
         ).then((response) => response.json());
 
         dataset = await fetch(
-          "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/air_pollution_emissions.csv"
+          "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/sigungu_population_sig_cd.csv"
         )
           .then((response) => response.text())
           .then((response) => csvToArray(response))
@@ -300,7 +211,7 @@
           },
 
           title: {
-            text: "Air Pollution Emissions",
+            text: "Population",
           },
 
           accessibility: {
@@ -321,13 +232,12 @@
           series: [
             {
               data: getData(startYear),
-              keys: ["hc-key", "value"],
-              joinBy: "hc-key",
-
+              keys: ["SIG_CD", "value"],
+              joinBy: "SIG_CD",
               name: startYear,
               dataLabels: {
                 enabled: true,
-                format: "{point.properties.name}",
+                format: "{point.properties.SIG_KOR_NM}",
               },
             },
           ],
