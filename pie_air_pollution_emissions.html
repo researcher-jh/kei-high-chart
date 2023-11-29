@@ -57,41 +57,39 @@
             class="fa fa-play"
             title="play"
           ></button>
-          <input
-            id="play-range"
-            type="range"
-            value="1999"
-            min="1999"
-            max="2020"
-          />
+          <input id="play-range" type="range" />
         </div>
         <div id="container"></div>
       </div>
     </figure>
 
     <script type="text/javascript">
-      const startYear = 1999,
-        endYear = 2020,
-        btn = document.getElementById("play-pause-button"),
+      const btn = document.getElementById("play-pause-button"),
         input = document.getElementById("play-range"),
-        nbr = 6;
+        nbr = 7;
 
-      let dataset, chart;
+      let dataset, chart, startYear, endYear;
 
       function getData(year) {
-        const output = Object.entries(dataset).map((country) => {
-          const [countryName, countryData] = country;
-          return [countryName, Number(countryData[year])];
+        const output = Object.entries(dataset).map((line) => {
+          const [name, value] = line;
+          return [name, Number(value[year])];
         });
-        return [output[0], output.slice(1, nbr)];
+        const total = output
+          .slice(0, nbr)
+          .reduce((sum, item) => sum + Number(item[1]), 0);
+
+        return [total, output.slice(0, nbr)];
       }
 
       function getSubtitle() {
-        const totalNumber = getData(input.value)[0][1].toFixed(2);
+        const totalNumber = getData(input.value)[0]
+          .toString()
+          .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         return `<span style="font-size: 80px">${input.value}</span>
         <br>
         <span style="font-size: 22px">
-            Total: <b> ${totalNumber}</b> TWh
+            Total: <b> ${totalNumber}</b> ton
         </span>`;
       }
 
@@ -111,7 +109,7 @@
           result[sidoName] = {};
           headers.forEach((header, index) => {
             const newHeader = header.replace(/\r/g, "");
-            result[sidoName][newHeader] = dataPoints[index];
+            result[sidoName][newHeader] = dataPoints[index].replace(/\r/g, "");
           });
         });
 
@@ -123,7 +121,16 @@
           "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/air_pollution_emissions.csv"
         )
           .then((response) => response.text())
-          .then((response) => csvToJson(response));
+          .then((response) => {
+            const headers = response.split("\n")[0].split(",").slice(1);
+            input.min = Number(headers[0]);
+            startYear = Number(headers[0]);
+            input.value = Number(headers[0]);
+
+            input.max = Number(headers[headers.length - 1]);
+            endYear = Number(headers[headers.length - 1]);
+            return csvToJson(response);
+          });
 
         chart = Highcharts.chart("container", {
           title: {
@@ -143,8 +150,11 @@
           },
 
           tooltip: {
-            valueDecimals: 2,
-            valueSuffix: "Ton",
+            //valueDecimals: 2,
+            //valueSuffix: "ton",
+            formatter: function () {
+              return this.key + ": " + this.y.toLocaleString() + " ton";
+            },
           },
 
           plotOptions: {
