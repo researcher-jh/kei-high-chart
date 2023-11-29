@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Air Pollution Emissions Map</title>
+    <style type="text/css">
+      @import url("https://netdna.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css");
+
+      .highcharts-figure .highcharts-data-table table {
+        min-width: 360px;
+        max-width: 800px;
+        margin: 1em auto;
+      }
+
+      .highcharts-data-table table {
+        font-family: Verdana, sans-serif;
+        border-collapse: collapse;
+        border: 1px solid #ebebeb;
+        margin: 10px auto;
+        text-align: center;
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .highcharts-data-table caption {
+        padding: 1em 0;
+        font-size: 1.2em;
+        color: #555;
+      }
+
+      .highcharts-data-table th {
+        font-weight: 600;
+        padding: 0.5em;
+      }
+
+      .highcharts-data-table td,
+      .highcharts-data-table th,
+      .highcharts-data-table caption {
+        padding: 0.5em;
+      }
+
+      .highcharts-data-table thead tr,
+      .highcharts-data-table tr:nth-child(even) {
+        background: #f8f8f8;
+      }
+
+      .highcharts-data-table tr:hover {
+        background: #f1f7ff;
+      }
+
+      #play-controls {
+        max-width: 1000px;
+        margin: 1em auto;
+      }
+
+      #container {
+        height: 1200px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      #play-pause-button {
+        margin-left: 10px;
+        width: 50px;
+        height: 50px;
+        cursor: pointer;
+        border: 1px solid rgba(2, 117, 255, 1);
+        border-radius: 25px;
+        color: white;
+        background-color: rgba(2, 117, 255, 1);
+        transition: background-color 250ms;
+      }
+
+      #play-pause-button:hover {
+        background-color: rgba(2, 117, 255, 0.5);
+      }
+
+      #play-range {
+        transform: translateY(2.5px);
+        width: calc(100% - 90px);
+        background: #f8f8f8;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://code.highcharts.com/maps/highmaps.js"></script>
+    <script src="https://code.highcharts.com/maps/modules/data.js"></script>
+    <script src="https://code.highcharts.com/maps/modules/drilldown.js"></script>
+    <script src="https://code.highcharts.com/maps/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/maps/modules/offline-exporting.js"></script>
+    <script src="https://code.highcharts.com/maps/modules/accessibility.js"></script>
+
+    <link
+      href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css"
+      rel="stylesheet"
+    />
+
+    <figure class="highcharts-figure">
+      <div id="parent-container">
+        <div id="play-controls">
+          <button
+            id="play-pause-button"
+            class="fa fa-play"
+            title="play"
+          ></button>
+          <input
+            id="play-range"
+            type="range"
+            value="2020"
+            min="2020"
+            max="2022"
+          />
+        </div>
+        <div id="container"></div>
+      </div>
+      <p class="highcharts-description">
+        Bar chart showing the world population by countries from 1960 to 2018.
+      </p>
+    </figure>
+
+    <script type="text/javascript">
+      const startYear = 2020,
+        endYear = 2022,
+        btn = document.getElementById("play-pause-button"),
+        input = document.getElementById("play-range");
+
+      let topologySigungu,
+        datasetSido,
+        datasetSigungu,
+        mode,
+        chart,
+        sidoData,
+        sigunguData;
+
+      /**
+       * 전체 시군구 중에서 해당 시도에 속하는 시군구만 필터링
+       */
+      function filterGeoJsonByHcKey(originalGeoJson, hcKey) {
+        const newGeoJson = {
+          type: "FeatureCollection",
+          name: originalGeoJson.name,
+          crs: originalGeoJson.crs,
+          features: [],
+        };
+
+        newGeoJson.features = originalGeoJson.features.filter((feature) => {
+          return feature.properties["hc-key"] === hcKey;
+        });
+
+        return newGeoJson;
+      }
+
+      const drilldown = async function (e) {
+        if (!e.seriesOptions) {
+          (chart = this), (mapKey = `countries/us/${e.point.drilldown}-all`);
+
+          // Handle error, the timeout is cleared on success
+          let fail = setTimeout(() => {
+            if (!Highcharts.maps[mapKey]) {
+              chart.showLoading(`
+                    <i class="icon-frown"></i>
+                    Failed loading ${e.point.name}
+                `);
+              fail = setTimeout(() => {
+                chart.hideLoading();
+              }, 1000);
+            }
+          }, 3000);
+
+          // Show the Font Awesome spinner
+          chart.showLoading('<i class="icon-spinner icon-spin icon-3x"></i>');
+
+          // Load the drilldown map
+          const topology = filterGeoJsonByHcKey(
+            topologySigungu,
+            e.point.drilldown
+          );
+
+          sigunguData = Highcharts.geojson(topology);
+
+          console.log(sigunguData);
+          // Set a non-random bogus value
+          sigunguData.forEach((d, i) => {
+            d.value = getData(
+              datasetSigungu,
+              "SIG_CD",
+              d.properties["SIG_CD"],
+              input.value
+            );
+          });
+
+          // Apply the recommended map view if any
+          chart.mapView.update(
+            Highcharts.merge(
+              {
+                insets: undefined,
+                padding: 0,
+              }
+              //topology.objects.default["hc-recommended-mapview"]
+            )
+          );
+
+          // Hide loading and add series
+          chart.hideLoading();
+          clearTimeout(fail);
+          chart.addSeriesAsDrilldown(e.point, {
+            name: e.point.name,
+            data: sigunguData,
+            dataLabels: {
+              enabled: true,
+              format: "{point.properties.SIG_KOR_NM}",
+            },
+          });
+          mode = "sigungu";
+        }
+      };
+
+      // On drill up, reset to the top-level map view
+      const afterDrillUp = function (e) {
+        //if (e.seriesOptions.custom && e.seriesOptions.custom.mapView) {
+        e.target.mapView.update(
+          Highcharts.merge(
+            { insets: undefined }
+            //e.seriesOptions.custom.mapView
+          ),
+          false
+        );
+        mode = "sido";
+        update();
+        //}
+      };
+
+      /*
+       * transform csv to json
+       */
+      function csvToArray(csv) {
+        const lines = csv.split("\n");
+        const headers = parseCSVLine(lines[0]);
+        const result = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].replace(/\r/g, "");
+          const currentLine = parseCSVLine(line);
+          if (currentLine.length === headers.length) {
+            const obj = {};
+            for (let j = 0; j < headers.length; j++) {
+              obj[headers[j].replace(/\r/g, "")] = currentLine[j];
+            }
+            result.push(obj);
+          }
+        }
+
+        return result;
+      }
+
+      function parseCSVLine(line) {
+        const elements = [];
+        let inQuotes = false;
+        let currentValue = "";
+
+        for (let char of line) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === "," && !inQuotes) {
+            elements.push(currentValue);
+            currentValue = "";
+          } else {
+            currentValue += char;
+          }
+        }
+        if (currentValue.length > 0) {
+          elements.push(currentValue);
+        }
+
+        return elements;
+      }
+
+      function transposeData(data) {
+        const transposedData = {};
+
+        data.forEach((row) => {
+          for (const [key, value] of Object.entries(row)) {
+            if (!transposedData[key]) {
+              transposedData[key] = [];
+            }
+            transposedData[key].push(value);
+          }
+        });
+
+        return transposedData;
+      }
+
+      function getData(dataset, keyName, key, year) {
+        const output = dataset[year].filter((value, index) => {
+          return key === dataset[keyName][index];
+        });
+        return Number(output) / 100000;
+      }
+
+      (async () => {
+        const topology = await fetch(
+          "https://code.highcharts.com/mapdata/countries/kr/kr-all.topo.json"
+        ).then((response) => response.json());
+
+        topologySigungu = await fetch(
+          "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/map_data/sigungu_simplified_2.geojson"
+        ).then((response) => response.json());
+
+        datasetSido = await fetch(
+          "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/sido_population_hc_key.csv"
+        )
+          .then((response) => response.text())
+          .then((response) => csvToArray(response))
+          .then((response) => transposeData(response));
+
+        datasetSigungu = await fetch(
+          "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/sigungu_population_sig_cd.csv"
+        )
+          .then((response) => response.text())
+          .then((response) => csvToArray(response))
+          .then((response) => transposeData(response));
+
+        sidoData = Highcharts.geojson(topology);
+
+        const mapView = topology.objects.default["hc-recommended-mapview"];
+        //console.log(mapView);
+
+        // Set drilldown pointers
+        sidoData.forEach((d, i) => {
+          d.drilldown = d.properties["hc-key"];
+          d.value = getData(
+            datasetSido,
+            "hc-key",
+            d.properties["hc-key"],
+            input.value
+          );
+        });
+
+        // Instantiate the map
+        chart = Highcharts.mapChart("container", {
+          chart: {
+            events: {
+              drilldown,
+              afterDrillUp,
+            },
+            animation: false,
+          },
+
+          title: {
+            text: "Highcharts Map Drilldown",
+          },
+
+          colorAxis: {
+            min: 0,
+            minColor: "#E6E7E8",
+            maxColor: "#005645",
+          },
+
+          mapView,
+
+          mapNavigation: {
+            enabled: true,
+            buttonOptions: {
+              verticalAlign: "bottom",
+            },
+          },
+
+          plotOptions: {
+            map: {
+              states: {
+                hover: {
+                  color: "#EEDD66",
+                },
+              },
+            },
+          },
+
+          series: [
+            {
+              data: sidoData,
+              name: "South Korea",
+              dataLabels: {
+                enabled: true,
+                format: "{point.properties.postal-code}",
+              },
+              custom: {
+                mapView,
+              },
+            },
+          ],
+
+          drilldown: {
+            activeDataLabelStyle: {
+              color: "#FFFFFF",
+              textDecoration: "none",
+              textOutline: "1px #000000",
+            },
+            breadcrumbs: {
+              floating: true,
+              relativeTo: "spacingBox",
+            },
+            drillUpButton: {
+              relativeTo: "spacingBox",
+              position: {
+                x: 0,
+                y: 60,
+              },
+            },
+          },
+        });
+
+        mode = "sido";
+      })();
+
+      /*
+       * Pause the timeline, either when the range is ended, or when clicking the pause button.
+       * Pausing stops the timer and resets the button to play mode.
+       */
+      function pause(button) {
+        button.title = "play";
+        button.className = "fa fa-play";
+        clearTimeout(chart.sequenceTimer);
+        chart.sequenceTimer = undefined;
+      }
+
+      /*
+       * Update the chart. This happens either on updating (moving) the range input,
+       * or from a timer when the timeline is playing.
+       */
+      function update(increment) {
+        if (increment) {
+          input.value = parseInt(input.value, 10) + increment;
+        }
+        if (input.value >= endYear) {
+          // Auto-pause
+          pause(btn);
+        }
+
+        // chart.update(
+        //   {
+        //     // subtitle: {
+        //     //   text: getSubtitle(),
+        //     // },
+        //   },
+        //   false,
+        //   false,
+        //   false
+        // );
+
+        console.log(mode);
+        if (mode === "sido") {
+          chart.series[0].update({
+            data: sidoData.map((d, i) => {
+              d.drilldown = d.properties["hc-key"];
+              d.value = getData(
+                datasetSido,
+                "hc-key",
+                d.properties["hc-key"],
+                input.value
+              );
+              return d;
+            }),
+          });
+        }
+
+        if (mode === "sigungu") {
+          chart.series[0].update({
+            data: sigunguData.map((d, i) => {
+              d.value = getData(
+                datasetSigungu,
+                "SIG_CD",
+                d.properties["SIG_CD"],
+                input.value
+              );
+              return d;
+            }),
+          });
+        }
+      }
+
+      /*
+       * Play the timeline.
+       */
+      function play(button) {
+        button.title = "pause";
+        button.className = "fa fa-pause";
+        chart.sequenceTimer = setInterval(function () {
+          update(1);
+        }, 500);
+      }
+
+      btn.addEventListener("click", function () {
+        if (chart.sequenceTimer) {
+          pause(this);
+        } else {
+          play(this);
+        }
+      });
+      /*
+       * Trigger the update on the range bar click.
+       */
+      input.addEventListener("input", function () {
+        update();
+      });
+    </script>
+  </body>
+</html>
