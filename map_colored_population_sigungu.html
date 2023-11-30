@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Air Pollution Emissions Map</title>
+    <title>Korea Population Map</title>
     <style type="text/css">
       @import url("https://netdna.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css");
 
@@ -101,9 +101,9 @@
           <input
             id="play-range"
             type="range"
-            value="2020"
             min="2020"
             max="2022"
+            value="2020"
           />
         </div>
         <div id="container"></div>
@@ -111,12 +111,13 @@
     </figure>
 
     <script type="text/javascript">
-      const startYear = 2020,
-        endYear = 2022,
-        btn = document.getElementById("play-pause-button"),
+      const btn = document.getElementById("play-pause-button"),
         input = document.getElementById("play-range");
 
-      let dataset, chart;
+      let dataset,
+        chart,
+        startYear = 2020,
+        endYear = 2022;
 
       /*
        * transform csv to json
@@ -201,7 +202,16 @@
           "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/sigungu_population_sig_cd.csv"
         )
           .then((response) => response.text())
-          .then((response) => csvToArray(response))
+          .then((response) => {
+            // const headers = response.split("\n")[0].split(",").slice(1);
+            // input.min = Number(headers[0]);
+            // startYear = Number(headers[0]);
+            // input.value = Number(headers[0]);
+
+            // input.max = Number(headers[headers.length - 1]);
+            // endYear = Number(headers[headers.length - 1]);
+            return csvToArray(response);
+          })
           .then((response) => transposeData(response));
 
         // Initialize the chart
