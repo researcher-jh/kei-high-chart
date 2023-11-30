@@ -48,6 +48,11 @@
   </head>
   <body>
     <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/annotations.js"></script>
+    <script src="https://code.highcharts.com/modules/data.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
     <figure class="highcharts-figure">
       <div id="parent-container">
@@ -57,29 +62,18 @@
             class="fa fa-play"
             title="play"
           ></button>
-          <input
-            id="play-range"
-            type="range"
-            value="1999"
-            min="1999"
-            max="2020"
-          />
+          <input id="play-range" type="range" />
         </div>
         <div id="container"></div>
       </div>
-      <p class="highcharts-description">
-        Bar chart showing the world population by countries from 1960 to 2018.
-      </p>
     </figure>
 
     <script type="text/javascript">
-      const startYear = 1999,
-        endYear = 2020,
-        btn = document.getElementById("play-pause-button"),
+      const btn = document.getElementById("play-pause-button"),
         input = document.getElementById("play-range"),
-        nbr = 20;
+        nbr = 17;
 
-      let dataset, chart;
+      let dataset, chart, startYear, endYear;
 
       /*
        * Animate dataLabels functionality
@@ -158,20 +152,25 @@
 
       function getData(year) {
         const output = Object.entries(dataset)
-          .map((sido) => {
-            const [sidoName, sidoData] = sido;
-            return [sidoName, Number(sidoData[year])];
+          .map((line) => {
+            const [name, value] = line;
+            return [name, Number(value[year])];
           })
           .sort((a, b) => b[1] - a[1]);
-        return [output[0], output.slice(1, nbr)];
+        const total = output
+          .slice(0, nbr)
+          .reduce((sum, item) => sum + Number(item[1]), 0);
+        return [total, output.slice(0, nbr)];
       }
 
       function getSubtitle() {
-        const population = (getData(input.value)[0][1] / 1000000000).toFixed(2);
+        const totalNumber = getData(input.value)[0]
+          .toString()
+          .replace(/\B(?=(\d{3})+(?!\d))/g, ","); // ( / 1000000000).toFixed(2);
         return `<span style="font-size: 80px">${input.value}</span>
         <br>
         <span style="font-size: 22px">
-            Total: <b>: ${population}</b> billion
+            Total: <b>${totalNumber}</b> ton
         </span>`;
       }
 
@@ -191,7 +190,7 @@
           result[sidoName] = {};
           headers.forEach((header, index) => {
             const newHeader = header.replace(/\r/g, "");
-            result[sidoName][header] = dataPoints[index];
+            result[sidoName][newHeader] = dataPoints[index].replace(/\r/g, "");
           });
         });
 
@@ -203,7 +202,16 @@
           "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/air_pollution_emissions.csv"
         )
           .then((response) => response.text())
-          .then((response) => csvToJson(response));
+          .then((response) => {
+            const headers = response.split("\n")[0].split(",").slice(1);
+            input.min = Number(headers[0]);
+            startYear = Number(headers[0]);
+            input.value = Number(headers[0]);
+
+            input.max = Number(headers[headers.length - 1]);
+            endYear = Number(headers[headers.length - 1]);
+            return csvToJson(response);
+          });
 
         chart = Highcharts.chart("container", {
           chart: {
@@ -214,7 +222,7 @@
           },
           title: {
             text: "Air pollution emissions by sido",
-            align: "left",
+            align: "center",
           },
           subtitle: {
             useHTML: true,

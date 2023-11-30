@@ -66,13 +66,7 @@
             class="fa fa-play"
             title="play"
           ></button>
-          <input
-            id="play-range"
-            type="range"
-            value="1999"
-            min="1999"
-            max="2020"
-          />
+          <input id="play-range" type="range" />
         </div>
         <div id="container"></div>
       </div>
@@ -105,136 +99,146 @@
 
     <script type="text/javascript">
       const btn = document.getElementById("play-pause-button"),
-        input = document.getElementById("play-range"),
-        startYear = 1999,
-        endYear = 2020;
+        input = document.getElementById("play-range");
+
+      let chart, dataset, startYear, endYear;
 
       // General helper functions
-      const arrToAssociative = (arr) => {
-        const tmp = {};
-        arr.forEach((item) => {
-          tmp[item[0]] = item[1];
-        });
-
-        return tmp;
-      };
+      // const arrToAssociative = (arr) => {
+      //   const tmp = {};
+      //   arr.forEach((item) => {
+      //     tmp[item[0]] = item[1];
+      //   });
+      //   return tmp;
+      // };
 
       function getSubtitle() {
         return `<span style='font-size: 60px'>${input.value}</span>`;
       }
 
-      const data = [];
+      (async () => {
+        dataset = await fetch(
+          "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/air_pollution_emissions.csv"
+        )
+          .then((response) => response.text())
+          .then((response) => {
+            const lines = response.split("\n");
+            const headers = lines[0].split(",").slice(1); // 연도를 나타내는 헤더
 
-      const chart = Highcharts.chart("container", {
-        chart: {
-          events: {
-            // Some annotation labels need to be rotated to make room
-            load: function () {
-              // const labels = this.annotations[0].labels;
-              // labels
-              //   .find((a) => a.options.id === "vinyl-label")
-              //   .graphic.attr({
-              //     rotation: -20,
-              //   });
-              // labels
-              //   .find((a) => a.options.id === "cassettes-label")
-              //   .graphic.attr({
-              //     rotation: 20,
-              //   });
+            input.min = Number(headers[0]);
+            startYear = Number(headers[0]);
+            input.value = Number(headers[0]);
+
+            input.max = Number(headers[headers.length - 1].replace(/\r/g, ""));
+            endYear = Number(headers[headers.length - 1].replace(/\r/g, ""));
+
+            const seriesData = lines.slice(1).map((line) => {
+              const tokens = line.split(",");
+              const name = tokens[0]; // 도시 이름
+              const data = tokens.slice(1).map(Number); // 연도별 데이터
+              return { name, data };
+            });
+            return seriesData;
+          });
+
+        chart = Highcharts.chart("container", {
+          chart: {
+            type: "area",
+            marginTop: 100,
+            animation: {
+              duration: 700,
+              easing: (t) => t,
             },
           },
-          type: "area",
-          marginTop: 100,
-          animation: {
-            duration: 700,
-            easing: (t) => t,
-          },
-        },
-        title: {
-          text: "Air Pollution Emissions race chart",
-        },
-        subtitle: {
-          text: getSubtitle(),
-          floating: true,
-          align: "right",
-          verticalAlign: "middle",
-          x: -100,
-          y: -110,
-        },
-        data: {
-          csv: document.getElementById("csv").innerHTML,
-          itemDelimiter: ",",
-          complete: function (options) {
-            for (let i = 0; i < options.series.length; i++) {
-              data[i] = arrToAssociative(options.series[i].data);
-              options.series[i].data = null;
-            }
-          },
-        },
-        xAxis: {
-          allowDecimals: false,
-          min: startYear,
-          max: endYear,
-        },
-        yAxis: {
-          reversedStacks: false,
           title: {
-            text: "Air Pollution Emissions in South Korea",
+            text: "Air Pollution Emissions Area race chart",
           },
-          labels: {
-            format: "${text}",
+          subtitle: {
+            text: getSubtitle(),
+            floating: true,
+            align: "right",
+            verticalAlign: "middle",
+            x: -100,
+            y: -110,
           },
-        },
-        tooltip: {
-          split: true,
-          headerFormat: '<span style="font-size: 1.2em">{point.x}</span>',
-          pointFormat:
-            "{series.name}: <b>${point.y:,.1f} B</b> ({point.percentage:.1f}%)",
-          crosshairs: true,
-        },
-        plotOptions: {
-          area: {
-            stacking: "normal",
-            pointStart: startYear,
-            marker: {
-              enabled: false,
+          // data: {
+          //   csv: document.getElementById("csv").innerHTML,
+          //   itemDelimiter: ",",
+          //   complete: function (options) {
+          //     for (let i = 0; i < options.series.length; i++) {
+          //       console.log(options.series[i].data);
+          //       data[i] = arrToAssociative(options.series[i].data);
+          //       options.series[i].data = null;
+          //     }
+          //   },
+          // },
+          series: dataset,
+          xAxis: {
+            allowDecimals: false,
+            min: startYear,
+            max: endYear,
+          },
+          yAxis: {
+            reversedStacks: false,
+            title: {
+              text: "Air Pollution Emissions in South Korea",
+            },
+            labels: {
+              format: "${text}",
             },
           },
-        },
-        responsive: {
-          rules: [
-            {
-              condition: {
-                maxWidth: 500,
+          tooltip: {
+            split: true,
+            headerFormat: '<span style="font-size: 1.2em">{point.x}</span>',
+            pointFormat:
+              "{series.name}: <b>{point.y} ton</b> ({point.percentage:.1f}%)",
+            crosshairs: true,
+          },
+          plotOptions: {
+            area: {
+              stacking: "normal",
+              pointStart: startYear,
+              marker: {
+                enabled: false,
               },
-              chartOptions: {
-                title: {
-                  align: "left",
+            },
+          },
+          responsive: {
+            rules: [
+              {
+                condition: {
+                  maxWidth: 500,
                 },
-                subtitle: {
-                  y: -150,
-                  x: -20,
-                },
-                yAxis: {
-                  labels: {
-                    align: "left",
-                    x: 0,
-                    y: -3,
-                  },
-                  tickLength: 0,
+                chartOptions: {
                   title: {
-                    align: "high",
-                    reserveSpace: false,
-                    rotation: 0,
-                    textAlign: "left",
-                    y: -20,
+                    align: "left",
+                  },
+                  subtitle: {
+                    y: -150,
+                    x: -20,
+                  },
+                  yAxis: {
+                    labels: {
+                      align: "left",
+                      x: 0,
+                      y: -3,
+                    },
+                    tickLength: 0,
+                    title: {
+                      align: "high",
+                      reserveSpace: false,
+                      rotation: 0,
+                      textAlign: "left",
+                      y: -20,
+                    },
                   },
                 },
               },
-            },
-          ],
-        },
-      });
+            ],
+          },
+        });
+        play(btn);
+      })();
 
       function pause(button) {
         button.title = "play";
@@ -243,66 +247,85 @@
         chart.sequenceTimer = undefined;
       }
 
+      // function update() {
+      //   chart.update(
+      //     {
+      //       subtitle: {
+      //         text: getSubtitle(),
+      //       },
+      //     },
+      //     false,
+      //     false,
+      //     false
+      //   );
+
+      //   const series = chart.series,
+      //     //labels = chart.annotations[0].labels,
+      //     yearIndex = input.value - startYear,
+      //     dataLength = series[0].options.data.length;
+
+      //   // If slider moved back in time
+      //   if (yearIndex < dataLength - 1) {
+      //     for (let i = 0; i < series.length; i++) {
+      //       const seriesData = series[i].data.slice(0, yearIndex);
+      //       series[i].setData(seriesData, false);
+      //     }
+      //   }
+
+      //   // If slider moved forward in time
+      //   if (yearIndex > dataLength - 1) {
+      //     const remainingYears = yearIndex - dataLength;
+      //     for (let i = 0; i < series.length; i++) {
+      //       for (let j = input.value - remainingYears; j < input.value; j++) {
+      //         series[i].addPoint([data[i][j]], false);
+      //       }
+      //     }
+      //   }
+
+      //   // Add current year
+      //   for (let i = 0; i < series.length; i++) {
+      //     const newY = data[i][input.value];
+      //     series[i].addPoint([newY], false);
+      //   }
+
+      //   // labels.forEach((label) => {
+      //   //   label.graphic.css({
+      //   //     opacity: (input.value >= label.options.point.x) | 0,
+      //   //   });
+      //   // });
+
+      //   chart.redraw();
+
+      //   input.value = parseInt(input.value, 10) + 1;
+
+      //   if (input.value > endYear) {
+      //     // Auto-pause
+      //     pause(btn);
+      //   }
+      // }
+
       function update() {
-        chart.update(
-          {
-            subtitle: {
-              text: getSubtitle(),
-            },
-          },
-          false,
-          false,
-          false
-        );
+        const selectedYear = parseInt(input.value, 10); // 현재 선택된 연도
+        const yearIndex = selectedYear - startYear; // 연도 인덱스 계산
 
-        const series = chart.series,
-          //labels = chart.annotations[0].labels,
-          yearIndex = input.value - startYear,
-          dataLength = series[0].options.data.length;
+        chart.series.forEach((series, i) => {
+          const newData = dataset[i].data.slice(0, yearIndex + 1); // 선택된 연도까지의 데이터 슬라이스
+          series.setData(newData, false); // 데이터 업데이트 (차트 렌더링 지연)
+        });
 
-        // If slider moved back in time
-        if (yearIndex < dataLength - 1) {
-          for (let i = 0; i < series.length; i++) {
-            const seriesData = series[i].data.slice(0, yearIndex);
-            series[i].setData(seriesData, false);
-          }
-        }
+        chart.setTitle(null, { text: getSubtitle(selectedYear) });
+        chart.redraw(); // 차트 렌더링
 
-        // If slider moved forward in time
-        if (yearIndex > dataLength - 1) {
-          const remainingYears = yearIndex - dataLength;
-          for (let i = 0; i < series.length; i++) {
-            for (let j = input.value - remainingYears; j < input.value; j++) {
-              series[i].addPoint([data[i][j]], false);
-            }
-          }
-        }
-
-        // Add current year
-        for (let i = 0; i < series.length; i++) {
-          const newY = data[i][input.value];
-          series[i].addPoint([newY], false);
-        }
-
-        // labels.forEach((label) => {
-        //   label.graphic.css({
-        //     opacity: (input.value >= label.options.point.x) | 0,
-        //   });
-        // });
-
-        chart.redraw();
-
-        input.value = parseInt(input.value, 10) + 1;
-
+        // 연도를 하나 증가시키고, 최대 연도를 초과하는 경우 자동 정지
+        input.value = selectedYear + 1;
         if (input.value > endYear) {
-          // Auto-pause
           pause(btn);
         }
       }
 
       function play(button) {
         // Reset slider at the end
-        if (input.value > endYear) {
+        if (input.value >= endYear) {
           input.value = startYear;
         }
         button.title = "pause";
@@ -320,8 +343,7 @@
         }
       });
 
-      play(btn);
-
+      //play(btn);
       // Trigger the update on the range bar click.
       input.addEventListener("input", update);
     </script>
