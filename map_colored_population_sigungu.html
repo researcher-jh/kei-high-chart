@@ -108,9 +108,6 @@
         </div>
         <div id="container"></div>
       </div>
-      <p class="highcharts-description">
-        Bar chart showing the world population by countries from 1960 to 2018.
-      </p>
     </figure>
 
     <script type="text/javascript">
@@ -191,6 +188,10 @@
         return transposedData;
       }
 
+      function getSubtitle(year) {
+        return `<span style='font-size: 15px'>Year: ${year}</span>`;
+      }
+
       (async () => {
         const topology = await fetch(
           "https://raw.githubusercontent.com/researcher-jh/kei-high-chart/main/data/map_data/sigungu_simplified.geojson"
@@ -214,8 +215,16 @@
             text: "Population",
           },
 
+          subtitle: {
+            text: getSubtitle(startYear),
+            floating: true,
+            align: "center",
+            verticalAlign: "top",
+            y: 50,
+          },
+
           accessibility: {
-            typeDescription: "Map of Germany.",
+            typeDescription: "Korea",
           },
 
           mapNavigation: {
@@ -260,24 +269,15 @@
        * or from a timer when the timeline is playing.
        */
       function update(increment) {
-        if (increment) {
-          input.value = parseInt(input.value, 10) + increment;
-        }
-        if (input.value >= endYear) {
-          // Auto-pause
+        const currentYear = parseInt(input.value, 10) + (increment || 0);
+        if (currentYear > endYear) {
           pause(btn);
+          return;
         }
 
-        // chart.update(
-        //   {
-        //     // subtitle: {
-        //     //   text: getSubtitle(),
-        //     // },
-        //   },
-        //   false,
-        //   false,
-        //   false
-        // );
+        input.value = currentYear;
+
+        chart.setTitle(null, { text: getSubtitle(currentYear) });
 
         chart.series[0].update({
           name: input.value,
