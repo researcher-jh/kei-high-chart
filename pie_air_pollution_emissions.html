@@ -18,7 +18,7 @@
       }
 
       #container {
-        height: 600px;
+        height: 700px;
         max-width: 1000px;
         margin: 0 auto;
       }
@@ -48,6 +48,11 @@
   </head>
   <body>
     <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/annotations.js"></script>
+    <script src="https://code.highcharts.com/modules/data.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
     <figure class="highcharts-figure">
       <div id="parent-container">
@@ -78,7 +83,6 @@
         const total = output
           .slice(0, nbr)
           .reduce((sum, item) => sum + Number(item[1]), 0);
-
         return [total, output.slice(0, nbr)];
       }
 
@@ -89,7 +93,7 @@
         return `<span style="font-size: 80px">${input.value}</span>
         <br>
         <span style="font-size: 22px">
-            Total: <b> ${totalNumber}</b> ton
+            Total: <b>${totalNumber}</b> ton
         </span>`;
       }
 
