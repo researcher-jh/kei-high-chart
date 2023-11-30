@@ -228,7 +228,7 @@
           false
         );
         mode = "sido";
-        update();
+        resetData();
         //}
       };
 
@@ -449,7 +449,6 @@
         //   false
         // );
 
-        console.log(mode);
         if (mode === "sido") {
           chart.series[0].update({
             data: sidoData.map((d, i) => {
@@ -478,6 +477,22 @@
             }),
           });
         }
+      }
+
+      function resetData() {
+        input.value = startYear;
+        chart.series[0].update({
+          data: sidoData.map((d, i) => {
+            d.drilldown = d.properties["hc-key"];
+            d.value = getData(
+              datasetSido,
+              "hc-key",
+              d.properties["hc-key"],
+              input.value
+            );
+            return d;
+          }),
+        });
       }
 
       /*
