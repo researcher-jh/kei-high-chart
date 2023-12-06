@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Air Pollution Emissions Map</title>
+    <title>South Korea Population</title>
     <style type="text/css">
       @import url("https://netdna.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css");
 
@@ -115,9 +115,6 @@
         </div>
         <div id="container"></div>
       </div>
-      <p class="highcharts-description">
-        Bar chart showing the world population by countries from 1960 to 2018.
-      </p>
     </figure>
 
     <script type="text/javascript">
@@ -154,7 +151,7 @@
 
       const drilldown = async function (e) {
         if (!e.seriesOptions) {
-          (chart = this), (mapKey = `countries/us/${e.point.drilldown}-all`);
+          chart = this;
 
           // Handle error, the timeout is cleared on success
           let fail = setTimeout(() => {
@@ -180,7 +177,6 @@
 
           sigunguData = Highcharts.geojson(topology);
 
-          console.log(sigunguData);
           // Set a non-random bogus value
           sigunguData.forEach((d, i) => {
             d.value = getData(
@@ -205,6 +201,7 @@
           // Hide loading and add series
           chart.hideLoading();
           clearTimeout(fail);
+
           chart.addSeriesAsDrilldown(e.point, {
             name: e.point.name,
             data: sigunguData,
@@ -213,6 +210,7 @@
               format: "{point.properties.SIG_KOR_NM}",
             },
           });
+
           mode = "sigungu";
         }
       };
@@ -296,7 +294,11 @@
         const output = dataset[year].filter((value, index) => {
           return key === dataset[keyName][index];
         });
-        return Number(output) / 100000;
+        return Number(output);
+      }
+
+      function getSubtitle(year) {
+        return `<span style='font-size: 15px'>Year: ${year}</span>`;
       }
 
       (async () => {
@@ -322,12 +324,9 @@
           .then((response) => csvToArray(response))
           .then((response) => transposeData(response));
 
-        sidoData = Highcharts.geojson(topology);
-
-        const mapView = topology.objects.default["hc-recommended-mapview"];
-        //console.log(mapView);
-
         // Set drilldown pointers
+
+        sidoData = Highcharts.geojson(topology);
         sidoData.forEach((d, i) => {
           d.drilldown = d.properties["hc-key"];
           d.value = getData(
@@ -349,7 +348,15 @@
           },
 
           title: {
-            text: "Highcharts Map Drilldown",
+            text: "South Korea Population Drill Down Map",
+          },
+
+          subtitle: {
+            text: getSubtitle(startYear),
+            floating: true,
+            align: "center",
+            verticalAlign: "top",
+            y: 50,
           },
 
           colorAxis: {
@@ -357,8 +364,6 @@
             minColor: "#E6E7E8",
             maxColor: "#005645",
           },
-
-          mapView,
 
           mapNavigation: {
             enabled: true,
@@ -379,14 +384,11 @@
 
           series: [
             {
-              data: sidoData,
               name: "South Korea",
+              data: sidoData,
               dataLabels: {
                 enabled: true,
-                format: "{point.properties.postal-code}",
-              },
-              custom: {
-                mapView,
+                format: "{point.properties.name}",
               },
             },
           ],
@@ -438,17 +440,7 @@
           pause(btn);
         }
 
-        // chart.update(
-        //   {
-        //     // subtitle: {
-        //     //   text: getSubtitle(),
-        //     // },
-        //   },
-        //   false,
-        //   false,
-        //   false
-        // );
-
+        chart.setTitle(null, { text: getSubtitle(input.value) });
         if (mode === "sido") {
           chart.series[0].update({
             data: sidoData.map((d, i) => {

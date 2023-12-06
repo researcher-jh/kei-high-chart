@@ -110,9 +110,6 @@
         </div>
         <div id="container"></div>
       </div>
-      <p class="highcharts-description">
-        Bar chart showing the world population by countries from 1960 to 2018.
-      </p>
     </figure>
 
     <script type="text/javascript">
@@ -286,6 +283,10 @@
         return transposedData;
       }
 
+      function getSubtitle(year) {
+        return `<span style='font-size: 15px'>Year: ${year}</span>`;
+      }
+
       (async () => {
         const topology = await fetch(
           "https://code.highcharts.com/mapdata/countries/kr/kr-all.topo.json"
@@ -298,12 +299,18 @@
           .then((response) => csvToArray(response))
           .then((response) => transposeData(response));
 
-        console.log(dataset);
         const H = Highcharts;
 
         chart = Highcharts.mapChart("container", {
           title: {
-            text: "Highcharts Maps lon/lat demo",
+            text: "Air Pollution Emissions Bubble Map",
+          },
+          subtitle: {
+            text: getSubtitle(startYear),
+            floating: true,
+            align: "center",
+            verticalAlign: "top",
+            y: 50,
           },
           tooltip: {
             pointFormat:
@@ -311,6 +318,7 @@
               // "Lon: {point.lon}<br>" +
               // "Lat: {point.lat}<br>" +
               "{point.z}",
+            distance: 4,
           },
           xAxis: {
             crosshair: {
@@ -328,39 +336,22 @@
               color: "gray",
             },
           },
-          plotOptions: {
-            series: {
-              marker: {
-                radius: 100,
-              },
-            },
-          },
           series: [
             {
-              name: "South Korea Air Pollution emissions",
               mapData: topology,
-              // accessibility: {
-              //   exposeAsGroupOnly: true,
-              // },
               borderColor: "#606060",
               nullColor: "rgba(200, 200, 200, 0.2)",
               showInLegend: false,
             },
             {
-              name: "Air Pollation Emissions",
+              name: input.value,
               type: "mapbubble", //"mappoint",
               dataLabels: {
                 enabled: true,
                 format: "{point.name}",
               },
-              accessibility: {
-                point: {
-                  valueDescriptionFormat:
-                    "{point.name}, Population {point.population}. Latitude {point.lat:.2f}, longitude {point.lon:.2f}.",
-                },
-              },
               data: getData(startYear),
-              maxSize: "12%",
+              maxSize: "10%",
               color: H.getOptions().colors[0],
             },
           ],
@@ -374,7 +365,7 @@
               chart.lbl = chart.renderer
                 .text("", 0, 0)
                 .attr({
-                  zIndex: 5,
+                  zIndex: 20,
                 })
                 .css({
                   color: "#505050",
@@ -412,20 +403,19 @@
           input.value = parseInt(input.value, 10) + increment;
         }
         if (input.value >= endYear) {
-          // Auto-pause
           pause(btn);
         }
 
-        // chart.update(
-        //   {
-        //     // subtitle: {
-        //     //   text: getSubtitle(),
-        //     // },
-        //   },
-        //   false,
-        //   false,
-        //   false
-        // );
+        chart.update(
+          {
+            subtitle: {
+              text: getSubtitle(input.value),
+            },
+          },
+          false,
+          false,
+          false
+        );
 
         chart.series[1].update({
           name: input.value,

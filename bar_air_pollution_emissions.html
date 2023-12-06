@@ -170,7 +170,7 @@
         return `<span style="font-size: 80px">${input.value}</span>
         <br>
         <span style="font-size: 22px">
-            Total: <b>${totalNumber}</b> ton
+            Total: <b>${totalNumber}</b> kg
         </span>`;
       }
 
@@ -330,7 +330,6 @@
           input.value = parseInt(input.value, 10) + increment;
         }
         if (input.value >= endYear) {
-          // Auto-pause
           pause(btn);
         }
 

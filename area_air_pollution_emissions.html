@@ -127,9 +127,11 @@
 
             input.min = Number(headers[0]);
             startYear = Number(headers[0]);
-            input.value = Number(headers[0]);
 
             input.max = Number(headers[headers.length - 1].replace(/\r/g, ""));
+            input.value = Number(
+              headers[headers.length - 1].replace(/\r/g, "")
+            ); //Number(headers[0]);
             endYear = Number(headers[headers.length - 1].replace(/\r/g, ""));
 
             const seriesData = lines.slice(1).map((line) => {
@@ -191,7 +193,7 @@
             split: true,
             headerFormat: '<span style="font-size: 1.2em">{point.x}</span>',
             pointFormat:
-              "{series.name}: <b>{point.y} ton</b> ({point.percentage:.1f}%)",
+              "{series.name}: <b>{point.y} kg</b> ({point.percentage:.1f}%)",
             crosshairs: true,
           },
           plotOptions: {
@@ -237,7 +239,7 @@
             ],
           },
         });
-        play(btn);
+        //play(btn);
       })();
 
       function pause(button) {

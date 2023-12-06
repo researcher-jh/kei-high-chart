@@ -93,7 +93,7 @@
         return `<span style="font-size: 80px">${input.value}</span>
         <br>
         <span style="font-size: 22px">
-            Total: <b>${totalNumber}</b> ton
+            Total: <b>${totalNumber}</b> kg
         </span>`;
       }
 
@@ -107,13 +107,13 @@
 
         lines.slice(1).forEach((line) => {
           const data = line.split(",");
-          const sidoName = data[0];
+          const name = data[0];
           const dataPoints = data.slice(1);
 
-          result[sidoName] = {};
+          result[name] = {};
           headers.forEach((header, index) => {
             const newHeader = header.replace(/\r/g, "");
-            result[sidoName][newHeader] = dataPoints[index].replace(/\r/g, "");
+            result[name][newHeader] = dataPoints[index].replace(/\r/g, "");
           });
         });
 
@@ -157,7 +157,7 @@
             //valueDecimals: 2,
             //valueSuffix: "ton",
             formatter: function () {
-              return this.key + ": " + this.y.toLocaleString() + " ton";
+              return this.key + ": " + this.y.toLocaleString() + " kg";
             },
           },
 
@@ -211,7 +211,6 @@
           input.value = parseInt(input.value, 10) + increment;
         }
         if (input.value >= endYear) {
-          // Auto-pause
           pause(btn);
         }
 

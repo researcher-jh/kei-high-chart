@@ -245,7 +245,7 @@
             koreaSidoMapInfo.filter(
               (info) => info.koreanName === dataset["name"][index]
             )[0]["hc-key"],
-            Number(value), /// 1000000,
+            Number(value),
           ];
         });
         return output;
@@ -325,7 +325,7 @@
           },
 
           tooltip: {
-            valueSuffix: "ton",
+            valueSuffix: "kg",
           },
 
           colorAxis: {
@@ -337,7 +337,6 @@
               data: getData(startYear),
               keys: ["hc-key", "value"],
               joinBy: "hc-key",
-
               name: startYear,
               dataLabels: {
                 enabled: true,
